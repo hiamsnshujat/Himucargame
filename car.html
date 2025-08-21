@@ -1,0 +1,205 @@
+08.21 11:40 PM
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2D Car Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #gameContainer {
+      position: relative;
+      width: 360px;
+      height: 600px;
+      background: url('road.jpg') repeat-y center;
+      background-size: cover;
+      overflow: hidden;
+      border: 2px solid #333;
+      border-radius: 10px;
+    }
+    #playerCar {
+      position: absolute;
+      bottom: 20px;
+      left: 140px;
+      width: 80px;
+      height: 150px;
+    }
+    .enemyCar {
+      position: absolute;
+      width: 80px;
+      height: 150px;
+      top: -200px;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      background: #ff4444;
+      color: #fff;
+      box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+    }
+    #gameOverScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      font-size: 24px;
+      display: none;
+    }
+    select {
+      padding: 5px;
+      margin-left: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="scoreBoard">Score: <span id="score">0</span> | High: <span id="highScore">0</span>
+      | Speed: <select id="speed">
+        <option value="5">10</option>
+        <option value="8">20</option>
+        <option value="12">30</option>
+      </select>
+    </div><img id="playerCar" src="car.jpg" />
+
+<div id="controls">
+  <button id="leftBtn">⟵</button>
+  <button id="rightBtn">⟶</button>
+</div>
+
+<div id="gameOverScreen">
+  <p>Game Over!</p>
+  <button id="retryBtn">Try Again</button>
+</div>
+
+  </div>  <script>
+    const gameContainer = document.getElementById('gameContainer');
+    const playerCar = document.getElementById('playerCar');
+    const scoreEl = document.getElementById('score');
+    const highScoreEl = document.getElementById('highScore');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const retryBtn = document.getElementById('retryBtn');
+    const speedSelect = document.getElementById('speed');
+
+    let playerX = 140;
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let speed = parseInt(speedSelect.value);
+    let enemyCars = [];
+    let gameInterval;
+    let isGameOver = false;
+
+    highScoreEl.innerText = highScore;
+
+    function startGame() {
+      score = 0;
+      enemyCars.forEach(car => car.remove());
+      enemyCars = [];
+      isGameOver = false;
+      playerX = 140;
+      playerCar.style.left = playerX + 'px';
+      gameOverScreen.style.display = 'none';
+      gameInterval = setInterval(gameLoop, 20);
+    }
+
+    function createEnemyCar() {
+      const enemy = document.createElement('img');
+      enemy.src = 'reversecar.jpg';
+      enemy.classList.add('enemyCar');
+      enemy.style.left = Math.random() > 0.5 ? '60px' : '220px';
+      gameContainer.appendChild(enemy);
+      enemyCars.push(enemy);
+    }
+
+    function movePlayer(direction) {
+      if (isGameOver) return;
+      if (direction === 'left' && playerX > 40) playerX -= 80;
+      if (direction === 'right' && playerX < 240) playerX += 80;
+      playerCar.style.left = playerX + 'px';
+    }
+
+    function gameLoop() {
+      score++;
+      scoreEl.innerText = score;
+
+      if (score % 80 === 0) createEnemyCar();
+
+      enemyCars.forEach((enemy, i) => {
+        const currentTop = parseInt(enemy.style.top || -150);
+        enemy.style.top = currentTop + speed + 'px';
+
+        if (currentTop > 600) {
+          enemy.remove();
+          enemyCars.splice(i, 1);
+        }
+
+        const playerRect = playerCar.getBoundingClientRect();
+        const enemyRect = enemy.getBoundingClientRect();
+        if (
+          playerRect.left < enemyRect.right &&
+          playerRect.right > enemyRect.left &&
+          playerRect.top < enemyRect.bottom &&
+          playerRect.bottom > enemyRect.top
+        ) {
+          endGame();
+        }
+      });
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      isGameOver = true;
+      gameOverScreen.style.display = 'flex';
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+        highScoreEl.innerText = highScore;
+      }
+    }
+
+    document.getElementById('leftBtn').addEventListener('click', () => movePlayer('left'));
+    document.getElementById('rightBtn').addEventListener('click', () => movePlayer('right'));
+    retryBtn.addEventListener('click', startGame);
+    speedSelect.addEventListener('change', () => speed = parseInt(speedSelect.value));
+
+    startGame();
+  </script></body>
+</html>
